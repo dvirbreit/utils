@@ -99,13 +99,38 @@ namespace dds_wrapper_unit_test
 		static_assert(13 == dev::NtStringView{ needle.data() }.ViewApi().size());
 
 		constexpr static char arr[3] = { 't', 'r', 'y' };
-		//constexpr std::string_view sv{ arr };				// wont compile - undefined behavior!
-		//constexpr dev::NtStringView ntsv{ arr };			// wont compile - throws(but no undefined memory access!)
+		// constexpr context wont compile - undefined behavior(bad memory access) at runtime! 
+		//constexpr std::string_view sv{ arr };				
+
+		//NtStringView Detects and prevents bad usage at runtime
 		EXPECT_THROW(dev::NtStringView ntsv{ arr }, std::runtime_error);
+		// ... causing failed compilation in constexpr context
+		//constexpr dev::NtStringView ntsv{ arr };
+
+		
+	}
 
 
-		dev::NtStringView ntsv{ needle.data() };
-		dev::NtStringView ntsv2 = ntsv;
+	TEST(NtStringView, StringTemporaries)
+	{
+		GTEST_SKIP();
+		using namespace std::literals;
+		//std::string view and rvalue strings - compiles but is undefined
+		auto literal = "bad std::string with no short string optimization";
+		std::string_view svbug{ std::string(literal)};
+		ASSERT_TRUE(0 == svbug.compare(literal));
+		EXPECT_EQ(strlen(svbug.data()), 49);
+		
+		
+		//NtStringView cannot be constructed with rvalue string - fails to compile :)
+		/*dev::NtStringView ntsv3{ "bad"s };
+		dev::NtStringView ntsv4{ std::string{"also bad"} };*/
+
+		//compiles but is undefined
+		/*auto literal = "bad string with no short string optimization";
+		std::string_view svbug{ "bad string with no short string optimization"s };
+		ASSERT_TRUE(0 == svbug.compare("bad string with no short string optimization"));
+		EXPECT_EQ(strlen(svbug.data()), 44);*/
 	}
 
 

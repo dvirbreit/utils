@@ -30,49 +30,72 @@ namespace dev
 	class NtStringView
 	{
 	public:
-		constexpr static inline bool IsExplicitNt(std::string_view sv)
-		{
-			return '\0' == sv.back();
-		}
+		constexpr static inline bool IsExplicitNt(std::string_view sv);
+		
 
 		template <std::size_t N>
-		constexpr explicit NtStringView(const char(&literal)[N])
-			: sv_(literal, N)
-		{
-			if (!IsExplicitNt(sv_))
-				throw std::runtime_error("Failed to verify string_view is null terminated - unsafe behavior NOT supported!");
-		}
+		constexpr explicit NtStringView(const char(&literal)[N]);
 
 		template <typename... Args, detail::EnableIfIsStringViewArgs<Args...> = true>
-		constexpr explicit NtStringView(Args&&... args)
-			: sv_(std::forward<Args>(args)...)
-		{
-			if (!IsExplicitNt(sv_))
-			{
-				sv_ = std::string_view(sv_.begin(), sv_.size() + 1);
-				if (!IsExplicitNt(sv_))
-					throw std::runtime_error("Failed to verify string_view is null terminated - unsafe behavior NOT supported!");
-			}
-		}
+		constexpr explicit NtStringView(Args&&... args);
 
-		constexpr inline const char* NullTerminatedCStr() const noexcept
-		{
-			return sv_.data();
-		}
+		constexpr inline const char* NullTerminatedCStr() const noexcept;
+		
 
-		constexpr inline operator std::string_view() const noexcept
-		{
-			return sv_;
-		}
+		constexpr inline operator std::string_view() const noexcept;
+		
 
-		constexpr inline std::string_view ViewApi() const noexcept
-		{
-			return sv_;
-		}
+		constexpr inline std::string_view ViewApi() const noexcept;
+		
 		
 	private:
 		std::string_view sv_;
 	};
+
+	constexpr inline bool NtStringView::IsExplicitNt(std::string_view sv)
+	{
+		return '\0' == sv.back();
+	}
+
+	template <std::size_t N>
+	constexpr NtStringView::NtStringView(const char(&literal)[N])
+		: sv_(literal, N)
+	{
+		if (!IsExplicitNt(sv_))
+			throw std::runtime_error("Failed to verify string_view is null terminated - unsafe behavior NOT supported!");
+	}
+
+	template <typename... Args, detail::EnableIfIsStringViewArgs<Args...>>
+	constexpr NtStringView::NtStringView(Args&&... args)
+		: sv_(std::forward<Args>(args)...)
+	{
+		if (!IsExplicitNt(sv_))
+		{
+			sv_ = std::string_view(sv_.begin(), sv_.size() + 1);
+			if (!IsExplicitNt(sv_))
+				throw std::runtime_error("Failed to verify string_view is null terminated - unsafe behavior NOT supported!");
+		}
+	}
+
+	template <>
+	constexpr NtStringView::NtStringView(std::string&&) = delete;
+
+	constexpr inline const char* NtStringView::NullTerminatedCStr() const noexcept
+	{
+		return sv_.data();
+	}
+
+	constexpr inline NtStringView::operator std::string_view() const noexcept
+	{
+		return sv_;
+	}
+
+	constexpr inline std::string_view NtStringView::ViewApi() const noexcept
+	{
+		return sv_;
+	}
+
+
 	
 	
 	//class UserEvent
